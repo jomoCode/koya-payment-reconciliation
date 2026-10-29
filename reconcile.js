@@ -7,6 +7,7 @@ const fs = require("fs");
 
 let total = 0;
 let count = 0;
+let latestEvents = new Map();
 
 const lines = fs.readFileSync("payments.jsonl", "utf8").split("\n").filter((l) => l.length > 0);
 for (const line of lines) {
@@ -26,8 +27,18 @@ for (const line of lines) {
     continue;
   }
 }
-  if (event.status === "success") {
-    total += Number(event.amount);
+  if (!event.txn_id) continue;
+
+  // Keep the latest attempt for each transaction, regardless of its status.
+  const previous = latestEvents.get(event.txn_id);
+  if (!previous || Date.parse(event.ts) > Date.parse(previous.ts)) {
+    latestEvents.set(event.txn_id, event);
+  }
+}
+
+for (const eventItem of latestEvents.values()) {
+  if (eventItem.status === "success") {
+    total += Number(String(eventItem.amount).replace(/,/g, ""));
     count += 1;
   }
 }
