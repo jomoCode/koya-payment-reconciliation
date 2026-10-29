@@ -10,7 +10,22 @@ let count = 0;
 
 const lines = fs.readFileSync("payments.jsonl", "utf8").split("\n").filter((l) => l.length > 0);
 for (const line of lines) {
-  const event = JSON.parse(line);
+  let event;
+  try{
+  event = JSON.parse(line);}
+  catch (error) {
+    // Clean data
+  const cleanedRow = line.replace(
+    /[\u0000-\u001F]/g,
+    ""
+  );
+
+  try {
+    event = JSON.parse(cleanedRow);
+  } catch {
+    continue;
+  }
+}
   if (event.status === "success") {
     total += Number(event.amount);
     count += 1;
